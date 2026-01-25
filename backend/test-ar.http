@@ -1,0 +1,179 @@
+### Variables
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMGMyNzg4Yi04YzJkLTQ3ZTctYjE1OC01YjVlOWNlMzZiMDUiLCJ0ZW5hbnRJZCI6ImU2NjI3ZWEzLTM3ODktNDc1Yy1hMTk4LTE2YjQ4ODU3ZmM1ZiIsImVtYWlsIjoiYWRtaW5AZXJwLmxvY2FsIiwiaWF0IjoxNzY4OTgwMjc5LCJleHAiOjE3Njk1ODUwNzl9.inWEDEXNPzhFvuyWH_j21qbe-CUNpaTJH_DMtB3JrGg
+@companyId = c5f61904-b52b-4e97-a1a7-1164cd5556d2
+@customerId = YOUR_CUSTOMER_ID_HERE
+@invoiceId = YOUR_INVOICE_ID_HERE
+
+### ============================================
+### CUSTOMERS
+### ============================================
+
+### Create Customer
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "name": "Acme Corporation",
+  "legalName": "Acme Corporation Ltd",
+  "email": "billing@acme.com",
+  "phone": "+230 5123 4567",
+  "mobile": "+230 5987 6543",
+  "taxId": "MU12345678",
+  "address": "123 Business Street",
+  "city": "Port Louis",
+  "state": "Port Louis",
+  "postalCode": "11328",
+  "country": "MU",
+  "paymentTerms": 30,
+  "creditLimit": 100000,
+  "currency": "MUR",
+  "notes": "Important client - priority support"
+}
+
+### List Customers
+GET {{baseUrl}}/customers?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List Active Customers Only
+GET {{baseUrl}}/customers?companyId={{companyId}}&isActive=true
+Authorization: Bearer {{token}}
+
+### Search Customers
+GET {{baseUrl}}/customers?companyId={{companyId}}&search=Acme
+Authorization: Bearer {{token}}
+
+### Get Customer by ID
+GET {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{token}}
+
+### Update Customer
+PATCH {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "paymentTerms": 45,
+  "creditLimit": 150000,
+  "notes": "Credit limit increased"
+}
+
+### Get Customer Balance
+GET {{baseUrl}}/customers/{{customerId}}/balance
+Authorization: Bearer {{token}}
+
+### Delete Customer
+DELETE {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### INVOICES
+### ============================================
+
+### Create Invoice
+POST {{baseUrl}}/invoices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "customerId": "{{customerId}}",
+  "invoiceDate": "2026-01-21",
+  "dueDate": "2026-02-20",
+  "reference": "PO-12345",
+  "description": "Professional services for January 2026",
+  "lines": [
+    {
+      "description": "Consulting services - 40 hours",
+      "quantity": 40,
+      "unitPrice": 2500,
+      "taxRate": 15,
+      "accountId": "75999fc3-dce9-4799-b9c6-1a2a3127a4d3"
+    },
+    {
+      "description": "Software license - Annual",
+      "quantity": 1,
+      "unitPrice": 50000,
+      "taxRate": 15,
+      "accountId": "de794024-b28e-46e1-88ca-96b069efc6c3"
+    }
+  ],
+  "notes": "Payment due within 30 days"
+}
+
+### List Invoices
+GET {{baseUrl}}/invoices?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List Invoices by Customer
+GET {{baseUrl}}/invoices?companyId={{companyId}}&customerId={{customerId}}
+Authorization: Bearer {{token}}
+
+### List Invoices by Status
+GET {{baseUrl}}/invoices?companyId={{companyId}}&status=SENT
+Authorization: Bearer {{token}}
+
+### List Invoices by Date Range
+GET {{baseUrl}}/invoices?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Get Invoice by ID
+GET {{baseUrl}}/invoices/{{invoiceId}}
+Authorization: Bearer {{token}}
+
+### Update Invoice (Draft Only)
+PATCH {{baseUrl}}/invoices/{{invoiceId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dueDate": "2026-02-25",
+  "notes": "Extended payment terms approved"
+}
+
+### Send Invoice
+POST {{baseUrl}}/invoices/{{invoiceId}}/send
+Authorization: Bearer {{token}}
+
+### Post Invoice to General Ledger
+POST {{baseUrl}}/invoices/{{invoiceId}}/post-to-gl
+Authorization: Bearer {{token}}
+
+### Record Payment on Invoice
+POST {{baseUrl}}/invoices/{{invoiceId}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "paymentDate": "2026-01-25",
+  "amount": 50000,
+  "paymentMethod": "BANK_TRANSFER",
+  "reference": "TXN-987654",
+  "notes": "Partial payment received"
+}
+
+### Delete Invoice (Draft Only)
+DELETE {{baseUrl}}/invoices/{{invoiceId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### AR REPORTS
+### ============================================
+
+### AR Aging Report
+GET {{baseUrl}}/invoices/reports/ar-aging?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### AR Aging Report as of Date
+GET {{baseUrl}}/invoices/reports/ar-aging?companyId={{companyId}}&asOfDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Customer Statement
+GET {{baseUrl}}/invoices/reports/customer-statement?companyId={{companyId}}&customerId={{customerId}}
+Authorization: Bearer {{token}}
+
+### Customer Statement with Date Range
+GET {{baseUrl}}/invoices/reports/customer-statement?companyId={{companyId}}&customerId={{customerId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}

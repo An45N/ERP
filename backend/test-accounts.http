@@ -1,0 +1,91 @@
+### ERP Accounting API Tests - Chart of Accounts
+### Use with REST Client extension in VS Code
+
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMGMyNzg4Yi04YzJkLTQ3ZTctYjE1OC01YjVlOWNlMzZiMDUiLCJ0ZW5hbnRJZCI6ImU2NjI3ZWEzLTM3ODktNDc1Yy1hMTk4LTE2YjQ4ODU3ZmM1ZiIsImVtYWlsIjoiYWRtaW5AZXJwLmxvY2FsIiwiaWF0IjoxNzY4OTgwMjc5LCJleHAiOjE3Njk1ODUwNzl9.inWEDEXNPzhFvuyWH_j21qbe-CUNpaTJH_DMtB3JrGg
+@companyId = c5f61904-b52b-4e97-a1a7-1164cd5556d2
+
+### 1. Login to get token
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "tenantCode": "DEFAULT",
+  "email": "admin@erp.local",
+  "password": "Admin123!"
+}
+
+### 2. Initialize Default Chart of Accounts
+POST {{baseUrl}}/accounts/initialize
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}"
+}
+
+### 3. Get All Accounts for Company
+GET {{baseUrl}}/accounts?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### 4. Get Accounts by Type (ASSET)
+GET {{baseUrl}}/accounts?companyId={{companyId}}&type=ASSET
+Authorization: Bearer {{token}}
+
+### 5. Get Accounts by Category (Bank)
+GET {{baseUrl}}/accounts?companyId={{companyId}}&category=Bank
+Authorization: Bearer {{token}}
+
+### 6. Search Accounts
+GET {{baseUrl}}/accounts?companyId={{companyId}}&search=cash
+Authorization: Bearer {{token}}
+
+### 7. Create New Account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "code": "1125",
+  "name": "Petty Cash",
+  "type": "ASSET",
+  "category": "Cash",
+  "currency": "MUR",
+  "description": "Petty cash for daily expenses"
+}
+
+### 8. Get Single Account by ID
+GET {{baseUrl}}/accounts/81a52190-afb4-4cc7-b693-8f710090a1d0
+Authorization: Bearer {{token}}
+
+### 9. Update Account
+PATCH {{baseUrl}}/accounts/18ba37dc-bea2-4684-aea8-dc09b20e65b4
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Petty Cash - Updated",
+  "description": "Updated description"
+}
+
+### 10. Get Revenue Accounts Only
+GET {{baseUrl}}/accounts?companyId={{companyId}}&type=REVENUE
+Authorization: Bearer {{token}}
+
+### 11. Get Expense Accounts Only
+GET {{baseUrl}}/accounts?companyId={{companyId}}&type=EXPENSE
+Authorization: Bearer {{token}}
+
+### 12. Deactivate Account
+PATCH {{baseUrl}}/accounts/18ba37dc-bea2-4684-aea8-dc09b20e65b4
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+### 13. Delete Account (only if no transactions)
+DELETE {{baseUrl}}/accounts/18ba37dc-bea2-4684-aea8-dc09b20e65b4
+Authorization: Bearer {{token}}

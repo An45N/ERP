@@ -1,0 +1,70 @@
+### ERP Authentication API Tests
+### Use with REST Client extension in VS Code
+###
+### IMPORTANT: Before you can register/login, you need a tenant and company in the database.
+### Run the seed script first: npm run seed (if available)
+### OR manually insert via SQL Server Management Studio
+### OR use the setup script below
+
+@baseUrl = http://localhost:4000/api
+
+### Health Check
+GET {{baseUrl}}/health
+
+### ============================================
+### FIRST TIME SETUP (Run these in order)
+### ============================================
+
+### Step 1: Register First User (this requires tenant "DEFAULT" to exist)
+### If you get "Tenant not found", you need to seed the database first
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "tenantCode": "DEFAULT",
+  "email": "admin@erp.local",
+  "password": "Admin123!",
+  "firstName": "Admin",
+  "lastName": "User"
+}
+
+### Step 2: Login with the user you just created
+### Copy the token from the response and use it in other .http files
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "tenantCode": "DEFAULT",
+  "email": "admin@erp.local",
+  "password": "Admin123!"
+}
+
+### Step 3: Get Current User (paste token from login response below)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### ALTERNATIVE USERS FOR TESTING
+### ============================================
+
+### Register Second User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "tenantCode": "DEFAULT",
+  "email": "test@erp.local",
+  "password": "Test123!",
+  "firstName": "Test",
+  "lastName": "User"
+}
+
+### Login as Second User
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "tenantCode": "DEFAULT",
+  "email": "test@erp.local",
+  "password": "Test123!"
+}

@@ -1,0 +1,184 @@
+### Variables
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMGMyNzg4Yi04YzJkLTQ3ZTctYjE1OC01YjVlOWNlMzZiMDUiLCJ0ZW5hbnRJZCI6ImU2NjI3ZWEzLTM3ODktNDc1Yy1hMTk4LTE2YjQ4ODU3ZmM1ZiIsImVtYWlsIjoiYWRtaW5AZXJwLmxvY2FsIiwiaWF0IjoxNzY4OTgwMjc5LCJleHAiOjE3Njk1ODUwNzl9.inWEDEXNPzhFvuyWH_j21qbe-CUNpaTJH_DMtB3JrGg
+@companyId = c5f61904-b52b-4e97-a1a7-1164cd5556d2
+@supplierId = 84840d44-2167-4e56-9755-e20a1cc250f8
+@billId = 43d9bfaa-6eb4-43c7-a8d4-0f9f154d0b90
+
+### ============================================
+### SUPPLIERS
+### ============================================
+
+### Create Supplier
+POST {{baseUrl}}/suppliers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "name": "Tech Supplies Ltd",
+  "legalName": "Tech Supplies Limited",
+  "email": "accounts@techsupplies.com",
+  "phone": "+230 5234 5678",
+  "mobile": "+230 5876 5432",
+  "taxId": "MU87654321",
+  "address": "456 Industrial Zone",
+  "city": "Port Louis",
+  "state": "Port Louis",
+  "postalCode": "11329",
+  "country": "MU",
+  "paymentTerms": 30,
+  "currency": "MUR",
+  "notes": "Preferred supplier for IT equipment"
+}
+
+### List Suppliers
+GET {{baseUrl}}/suppliers?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List Active Suppliers Only
+GET {{baseUrl}}/suppliers?companyId={{companyId}}&isActive=true
+Authorization: Bearer {{token}}
+
+### Search Suppliers
+GET {{baseUrl}}/suppliers?companyId={{companyId}}&search=Tech
+Authorization: Bearer {{token}}
+
+### Get Supplier by ID
+GET {{baseUrl}}/suppliers/{{supplierId}}
+Authorization: Bearer {{token}}
+
+### Update Supplier
+PATCH {{baseUrl}}/suppliers/{{supplierId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "paymentTerms": 45,
+  "notes": "Extended payment terms negotiated"
+}
+
+### Get Supplier Balance
+GET {{baseUrl}}/suppliers/{{supplierId}}/balance
+Authorization: Bearer {{token}}
+
+### Delete Supplier
+DELETE {{baseUrl}}/suppliers/{{supplierId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### BILLS
+### ============================================
+
+### Create Bill
+POST {{baseUrl}}/bills
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "supplierId": "{{supplierId}}",
+  "billDate": "2026-01-21",
+  "dueDate": "2026-02-20",
+  "reference": "INV-TECH-2026-001",
+  "description": "IT equipment and software licenses",
+  "lines": [
+    {
+      "description": "Dell Laptops - 5 units",
+      "quantity": 5,
+      "unitPrice": 45000,
+      "taxRate": 15,
+      "accountId": "f7a65125-2552-4055-8343-a152e8b620b3"
+    },
+    {
+      "description": "Microsoft Office 365 - Annual licenses",
+      "quantity": 10,
+      "unitPrice": 3500,
+      "taxRate": 15,
+      "accountId": "6b322588-51cf-45c6-aef6-bd25ffefe5bf"
+    },
+    {
+      "description": "Network switches",
+      "quantity": 2,
+      "unitPrice": 12000,
+      "taxRate": 15,
+      "accountId": "f7a65125-2552-4055-8343-a152e8b620b3"
+    }
+  ],
+  "notes": "Payment due within 30 days"
+}
+
+### List Bills
+GET {{baseUrl}}/bills?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List Bills by Supplier
+GET {{baseUrl}}/bills?companyId={{companyId}}&supplierId={{supplierId}}
+Authorization: Bearer {{token}}
+
+### List Bills by Status
+GET {{baseUrl}}/bills?companyId={{companyId}}&status=APPROVED
+Authorization: Bearer {{token}}
+
+### List Bills by Date Range
+GET {{baseUrl}}/bills?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Get Bill by ID
+GET {{baseUrl}}/bills/{{billId}}
+Authorization: Bearer {{token}}
+
+### Update Bill (Draft Only)
+PATCH {{baseUrl}}/bills/{{billId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dueDate": "2026-02-25",
+  "notes": "Extended payment terms approved by manager"
+}
+
+### Approve Bill
+POST {{baseUrl}}/bills/{{billId}}/approve
+Authorization: Bearer {{token}}
+
+### Post Bill to General Ledger
+POST {{baseUrl}}/bills/{{billId}}/post-to-gl
+Authorization: Bearer {{token}}
+
+### Record Payment on Bill
+POST {{baseUrl}}/bills/{{billId}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "paymentDate": "2026-01-25",
+  "amount": 100000,
+  "paymentMethod": "BANK_TRANSFER",
+  "reference": "TXN-PAY-123456",
+  "notes": "Partial payment made"
+}
+
+### Delete Bill (Draft Only)
+DELETE {{baseUrl}}/bills/{{billId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### AP REPORTS
+### ============================================
+
+### AP Aging Report
+GET {{baseUrl}}/bills/reports/ap-aging?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### AP Aging Report as of Date
+GET {{baseUrl}}/bills/reports/ap-aging?companyId={{companyId}}&asOfDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Supplier Statement
+GET {{baseUrl}}/bills/reports/supplier-statement?companyId={{companyId}}&supplierId={{supplierId}}
+Authorization: Bearer {{token}}
+
+### Supplier Statement with Date Range
+GET {{baseUrl}}/bills/reports/supplier-statement?companyId={{companyId}}&supplierId={{supplierId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}

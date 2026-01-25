@@ -1,0 +1,209 @@
+### Variables
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMGMyNzg4Yi04YzJkLTQ3ZTctYjE1OC01YjVlOWNlMzZiMDUiLCJ0ZW5hbnRJZCI6ImU2NjI3ZWEzLTM3ODktNDc1Yy1hMTk4LTE2YjQ4ODU3ZmM1ZiIsImVtYWlsIjoiYWRtaW5AZXJwLmxvY2FsIiwiaWF0IjoxNzY4OTgwMjc5LCJleHAiOjE3Njk1ODUwNzl9.inWEDEXNPzhFvuyWH_j21qbe-CUNpaTJH_DMtB3JrGg
+@companyId = c5f61904-b52b-4e97-a1a7-1164cd5556d2
+@taxAccountId = YOUR_TAX_ACCOUNT_ID_HERE
+@taxRateId = YOUR_TAX_RATE_ID_HERE
+
+### ============================================
+### TAX RATES CONFIGURATION
+### ============================================
+
+### Create VAT Tax Rate (15% - Mauritius Standard Rate)
+POST {{baseUrl}}/tax/rates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "code": "VAT-15",
+  "name": "VAT Standard Rate 15%",
+  "rate": 15.00,
+  "taxType": "VAT",
+  "effectiveFrom": "2024-01-01",
+  "description": "Mauritius standard VAT rate",
+  "taxAccountId": "{{taxAccountId}}",
+  "isDefault": true
+}
+
+### Create Zero-Rated VAT
+POST {{baseUrl}}/tax/rates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "code": "VAT-0",
+  "name": "VAT Zero-Rated",
+  "rate": 0.00,
+  "taxType": "VAT",
+  "effectiveFrom": "2024-01-01",
+  "description": "Zero-rated supplies (exports, etc.)",
+  "taxAccountId": "{{taxAccountId}}",
+  "isDefault": false
+}
+
+### Create Withholding Tax Rate
+POST {{baseUrl}}/tax/rates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "code": "WHT-10",
+  "name": "Withholding Tax 10%",
+  "rate": 10.00,
+  "taxType": "WITHHOLDING",
+  "effectiveFrom": "2024-01-01",
+  "description": "Withholding tax on services",
+  "isDefault": false
+}
+
+### List All Tax Rates
+GET {{baseUrl}}/tax/rates?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List VAT Rates Only
+GET {{baseUrl}}/tax/rates?companyId={{companyId}}&taxType=VAT
+Authorization: Bearer {{token}}
+
+### List Active Tax Rates
+GET {{baseUrl}}/tax/rates?companyId={{companyId}}&isActive=true
+Authorization: Bearer {{token}}
+
+### List Tax Rates as of Date
+GET {{baseUrl}}/tax/rates?companyId={{companyId}}&asOfDate=2026-01-21
+Authorization: Bearer {{token}}
+
+### Get Tax Rate by ID
+GET {{baseUrl}}/tax/rates/{{taxRateId}}
+Authorization: Bearer {{token}}
+
+### Update Tax Rate
+PATCH {{baseUrl}}/tax/rates/{{taxRateId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Updated VAT rate description",
+  "effectiveTo": "2026-12-31"
+}
+
+### Delete Tax Rate
+DELETE {{baseUrl}}/tax/rates/{{taxRateId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### TAX TRANSACTIONS
+### ============================================
+
+### List All Tax Transactions
+GET {{baseUrl}}/tax/transactions?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List Tax Transactions by Rate
+GET {{baseUrl}}/tax/transactions?companyId={{companyId}}&taxRateId={{taxRateId}}
+Authorization: Bearer {{token}}
+
+### List Tax Transactions by Type
+GET {{baseUrl}}/tax/transactions?companyId={{companyId}}&transactionType=INVOICE
+Authorization: Bearer {{token}}
+
+### List Tax Transactions by Date Range
+GET {{baseUrl}}/tax/transactions?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Reverse Tax Transaction
+POST {{baseUrl}}/tax/transactions/{{taxRateId}}/reverse
+Authorization: Bearer {{token}}
+
+### ============================================
+### VAT REPORTS
+### ============================================
+
+### Get VAT Return Summary
+GET {{baseUrl}}/tax/vat/return?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Get VAT Transaction Details
+GET {{baseUrl}}/tax/vat/transactions?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Get VAT Transactions - Sales Only
+GET {{baseUrl}}/tax/vat/transactions?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31&transactionType=INVOICE
+Authorization: Bearer {{token}}
+
+### Get VAT Transactions - Purchases Only
+GET {{baseUrl}}/tax/vat/transactions?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31&transactionType=BILL
+Authorization: Bearer {{token}}
+
+### Get VAT Breakdown by Rate
+GET {{baseUrl}}/tax/vat/by-rate?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Get Current VAT Liability
+GET {{baseUrl}}/tax/vat/liability?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### Get VAT Liability as of Date
+GET {{baseUrl}}/tax/vat/liability?companyId={{companyId}}&asOfDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Generate MRA VAT Return (Mauritius Revenue Authority)
+GET {{baseUrl}}/tax/vat/mra-return?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### Get VAT Audit Trail
+GET {{baseUrl}}/tax/vat/audit-trail?companyId={{companyId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### ============================================
+### TYPICAL VAT WORKFLOW
+### ============================================
+
+### Step 1: Configure Tax Rates
+# POST /api/tax/rates
+# - Create VAT 15% (standard)
+# - Create VAT 0% (zero-rated)
+# - Create VAT Exempt
+
+### Step 2: Tax is Automatically Calculated
+# When creating invoices and bills, tax is calculated
+# based on the tax rate specified on each line item
+
+### Step 3: Monthly VAT Return
+# At end of month:
+# a) Get VAT Return Summary
+#    GET /api/tax/vat/return?startDate=...&endDate=...
+# b) Review VAT by Rate
+#    GET /api/tax/vat/by-rate?startDate=...&endDate=...
+# c) Generate MRA Return
+#    GET /api/tax/vat/mra-return?startDate=...&endDate=...
+
+### Step 4: Submit to MRA
+# Use the MRA return data to complete your
+# online VAT return submission to Mauritius Revenue Authority
+
+### Step 5: Record VAT Payment
+# After paying VAT to MRA, record the payment
+# in your accounting system via journal entry
+
+### ============================================
+### MRA VAT RETURN FORMAT
+### ============================================
+# The MRA return includes all boxes required for
+# Mauritius VAT return submission:
+#
+# Box 1: Output VAT (VAT on sales)
+# Box 2: Input VAT (VAT on purchases)
+# Box 3: Net VAT (Box 1 - Box 2)
+# Box 4: VAT Payable (if Box 3 > 0)
+# Box 5: VAT Refundable (if Box 3 < 0)
+# Box 6: Standard-rated sales
+# Box 7: Zero-rated sales
+# Box 8: Exempt sales
+# Box 9: Total sales
+# Box 10: Standard-rated purchases
+# Box 11: Zero-rated purchases
+# Box 12: Exempt purchases
+# Box 13: Total purchases

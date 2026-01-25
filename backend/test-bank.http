@@ -1,0 +1,209 @@
+### Variables
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMGMyNzg4Yi04YzJkLTQ3ZTctYjE1OC01YjVlOWNlMzZiMDUiLCJ0ZW5hbnRJZCI6ImU2NjI3ZWEzLTM3ODktNDc1Yy1hMTk4LTE2YjQ4ODU3ZmM1ZiIsImVtYWlsIjoiYWRtaW5AZXJwLmxvY2FsIiwiaWF0IjoxNzY4OTgwMjc5LCJleHAiOjE3Njk1ODUwNzl9.inWEDEXNPzhFvuyWH_j21qbe-CUNpaTJH_DMtB3JrGg
+@companyId = c5f61904-b52b-4e97-a1a7-1164cd5556d2
+@glAccountId = 81a52190-afb4-4cc7-b693-8f710090a1d0
+@bankAccountId = YOUR_BANK_ACCOUNT_ID_HERE
+@reconciliationId = YOUR_RECONCILIATION_ID_HERE
+@bankTransactionId = YOUR_BANK_TRANSACTION_ID_HERE
+
+### ============================================
+### BANK ACCOUNTS
+### ============================================
+
+### Create Bank Account
+POST {{baseUrl}}/bank/accounts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "accountNumber": "1234567890",
+  "accountName": "MCB Business Checking",
+  "bankName": "Mauritius Commercial Bank",
+  "bankBranch": "Port Louis Main Branch",
+  "currency": "MUR",
+  "accountType": "CHECKING",
+  "glAccountId": "{{glAccountId}}",
+  "openingBalance": 500000,
+  "notes": "Primary business checking account"
+}
+
+### List Bank Accounts
+GET {{baseUrl}}/bank/accounts?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List Active Bank Accounts Only
+GET {{baseUrl}}/bank/accounts?companyId={{companyId}}&isActive=true
+Authorization: Bearer {{token}}
+
+### Get Bank Account by ID
+GET {{baseUrl}}/bank/accounts/{{bankAccountId}}
+Authorization: Bearer {{token}}
+
+### Update Bank Account
+PATCH {{baseUrl}}/bank/accounts/{{bankAccountId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "accountName": "MCB Business Checking - Updated",
+  "notes": "Primary business checking account - Updated details"
+}
+
+### Delete Bank Account
+DELETE {{baseUrl}}/bank/accounts/{{bankAccountId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### BANK STATEMENTS & TRANSACTIONS
+### ============================================
+
+### Import Bank Statement (CSV Data)
+POST {{baseUrl}}/bank/statements/import
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "bankAccountId": "{{bankAccountId}}",
+  "importBatch": "STMT-2026-01-31",
+  "transactions": [
+    {
+      "transactionDate": "2026-01-15",
+      "description": "Customer Payment - ABC Ltd",
+      "reference": "TXN-001234",
+      "debit": 50000,
+      "credit": 0,
+      "balance": 550000
+    },
+    {
+      "transactionDate": "2026-01-16",
+      "description": "Supplier Payment - Tech Supplies",
+      "reference": "CHQ-5678",
+      "debit": 0,
+      "credit": 25000,
+      "balance": 525000
+    },
+    {
+      "transactionDate": "2026-01-18",
+      "description": "Bank Charges",
+      "reference": "FEE-JAN26",
+      "debit": 0,
+      "credit": 500,
+      "balance": 524500
+    },
+    {
+      "transactionDate": "2026-01-20",
+      "description": "Customer Payment - XYZ Corp",
+      "reference": "TXN-001235",
+      "debit": 75000,
+      "credit": 0,
+      "balance": 599500
+    },
+    {
+      "transactionDate": "2026-01-25",
+      "description": "Salary Payments",
+      "reference": "PAYROLL-JAN26",
+      "debit": 0,
+      "credit": 150000,
+      "balance": 449500
+    }
+  ]
+}
+
+### List All Bank Transactions
+GET {{baseUrl}}/bank/transactions?companyId={{companyId}}&bankAccountId={{bankAccountId}}
+Authorization: Bearer {{token}}
+
+### List Unreconciled Transactions
+GET {{baseUrl}}/bank/transactions?companyId={{companyId}}&bankAccountId={{bankAccountId}}&isReconciled=false
+Authorization: Bearer {{token}}
+
+### List Transactions by Date Range
+GET {{baseUrl}}/bank/transactions?companyId={{companyId}}&bankAccountId={{bankAccountId}}&startDate=2026-01-01&endDate=2026-01-31
+Authorization: Bearer {{token}}
+
+### ============================================
+### BANK RECONCILIATION
+### ============================================
+
+### Start New Reconciliation
+POST {{baseUrl}}/bank/reconciliations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "companyId": "{{companyId}}",
+  "bankAccountId": "{{bankAccountId}}",
+  "statementDate": "2026-01-31",
+  "statementBalance": 449500
+}
+
+### List All Reconciliations
+GET {{baseUrl}}/bank/reconciliations?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### List Reconciliations for Specific Bank Account
+GET {{baseUrl}}/bank/reconciliations?companyId={{companyId}}&bankAccountId={{bankAccountId}}
+Authorization: Bearer {{token}}
+
+### Get Reconciliation by ID
+GET {{baseUrl}}/bank/reconciliations/{{reconciliationId}}
+Authorization: Bearer {{token}}
+
+### Suggest Matches for Bank Transaction
+GET {{baseUrl}}/bank/transactions/{{bankTransactionId}}/suggest-matches?companyId={{companyId}}&bankAccountId={{bankAccountId}}
+Authorization: Bearer {{token}}
+
+### Match Bank Transaction to Journal Entry
+POST {{baseUrl}}/bank/reconciliations/{{reconciliationId}}/match
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bankTransactionId": "{{bankTransactionId}}",
+  "journalEntryId": "YOUR_JOURNAL_ENTRY_ID_HERE"
+}
+
+### Match Bank Transaction (Manual - No Journal Entry)
+POST {{baseUrl}}/bank/reconciliations/{{reconciliationId}}/match
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bankTransactionId": "{{bankTransactionId}}"
+}
+
+### Unmatch Bank Transaction
+POST {{baseUrl}}/bank/transactions/{{bankTransactionId}}/unmatch
+Authorization: Bearer {{token}}
+
+### Complete Reconciliation
+POST {{baseUrl}}/bank/reconciliations/{{reconciliationId}}/complete
+Authorization: Bearer {{token}}
+
+### ============================================
+### TYPICAL RECONCILIATION WORKFLOW
+### ============================================
+
+### Step 1: Create Bank Account (if not exists)
+# POST /api/bank/accounts
+
+### Step 2: Import Bank Statement
+# POST /api/bank/statements/import
+
+### Step 3: Start Reconciliation
+# POST /api/bank/reconciliations
+
+### Step 4: Get Unreconciled Transactions
+# GET /api/bank/transactions?isReconciled=false
+
+### Step 5: For Each Transaction:
+#   a) Get Suggested Matches
+#      GET /api/bank/transactions/:id/suggest-matches
+#   b) Match Transaction
+#      POST /api/bank/reconciliations/:id/match
+
+### Step 6: Complete Reconciliation
+# POST /api/bank/reconciliations/:id/complete

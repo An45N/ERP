@@ -1,0 +1,537 @@
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../src/generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  code      String   @unique @db.VarChar(50)
+  name      String   @db.VarChar(255)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companies Company[]
+  users     User[]
+
+  @@map("tenants")
+}
+
+model Company {
+  id               String   @id @default(uuid())
+  tenantId         String
+  code             String   @db.VarChar(50)
+  name             String   @db.VarChar(255)
+  legalName        String?  @db.VarChar(255)
+  taxId            String?  @db.VarChar(100)
+  currency         String   @default("MUR") @db.VarChar(3)
+  address          String?  @db.VarChar(500)
+  city             String?  @db.VarChar(100)
+  country          String   @default("MU") @db.VarChar(2)
+  phone            String?  @db.VarChar(50)
+  email            String?  @db.VarChar(255)
+  fiscalYearStart  Int      @default(1) // Month: 1=Jan, 7=Jul (Mauritius)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accounts       Account[]
+  fiscalPeriods  FiscalPeriod[]
+  journalEntries JournalEntry[]
+  customers      Customer[]
+  suppliers      Supplier[]
+
+  @@unique([tenantId, code])
+  @@map("companies")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  email        String   @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  firstName    String   @db.VarChar(100)
+  lastName     String   @db.VarChar(100)
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles UserRole[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userRoles UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+// ============================================
+// ACCOUNTING MODELS
+// ============================================
+
+model Account {
+  id          String   @id @default(uuid())
+  tenantId    String
+  companyId   String
+  code        String   @db.VarChar(20)
+  name        String   @db.VarChar(255)
+  type        String   @db.VarChar(20) // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  category    String   @db.VarChar(50) // Cash, Bank, AR, AP, Inventory, etc.
+  subCategory String?  @db.VarChar(50)
+  currency    String   @default("MUR") @db.VarChar(3)
+  description String?  @db.VarChar(500)
+  parentId    String?  // For hierarchical chart of accounts
+  isActive    Boolean  @default(true)
+  isSystem    Boolean  @default(false) // System accounts cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent       Account?      @relation("AccountHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children     Account[]     @relation("AccountHierarchy")
+  journalLines JournalLine[]
+  bankAccounts BankAccount[]
+  taxRates     TaxRate[]
+
+  @@unique([tenantId, companyId, code])
+  @@index([tenantId, companyId, type])
+  @@index([tenantId, companyId, category])
+  @@map("accounts")
+}
+
+model FiscalPeriod {
+  id          String   @id @default(uuid())
+  tenantId    String
+  companyId   String
+  name        String   @db.VarChar(100) // "FY 2026", "Q1 2026", "Jan 2026"
+  periodType  String   @db.VarChar(20) // YEAR, QUARTER, MONTH
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @db.VarChar(20) @default("OPEN") // OPEN, CLOSED, LOCKED
+  closedBy    String?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalEntries JournalEntry[]
+
+  @@unique([tenantId, companyId, startDate, endDate])
+  @@index([tenantId, companyId, status])
+  @@map("fiscal_periods")
+}
+
+model JournalEntry {
+  id              String    @id @default(uuid())
+  tenantId        String
+  companyId       String
+  fiscalPeriodId  String
+  entryNumber     String    @db.VarChar(50)
+  entryDate       DateTime
+  entryType       String    @db.VarChar(20) @default("MANUAL") // MANUAL, SYSTEM, ADJUSTMENT, CLOSING
+  reference       String?   @db.VarChar(100)
+  description     String    @db.VarChar(500)
+  status          String    @db.VarChar(20) @default("DRAFT") // DRAFT, POSTED, REVERSED
+  createdBy       String
+  postedBy        String?
+  postedAt        DateTime?
+  reversedBy      String?
+  reversedAt      DateTime?
+  reversingEntryId String?  // Link to reversing entry
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fiscalPeriod FiscalPeriod  @relation(fields: [fiscalPeriodId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines        JournalLine[]
+
+  @@unique([tenantId, companyId, entryNumber])
+  @@index([tenantId, companyId, entryDate])
+  @@index([tenantId, companyId, status])
+  @@index([tenantId, companyId, fiscalPeriodId])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id             String  @id @default(uuid())
+  journalEntryId String
+  accountId      String
+  lineNumber     Int
+  debit          Decimal @default(0) @db.Decimal(18, 2)
+  credit         Decimal @default(0) @db.Decimal(18, 2)
+  description    String? @db.VarChar(500)
+  reference      String? @db.VarChar(100)
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  account      Account      @relation(fields: [accountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([journalEntryId, lineNumber])
+  @@index([accountId])
+  @@map("journal_lines")
+}
+
+model Customer {
+  id              String   @id @default(uuid())
+  tenantId        String
+  companyId       String
+  code            String   @db.VarChar(50)
+  name            String   @db.VarChar(255)
+  legalName       String?  @db.VarChar(255)
+  email           String?  @db.VarChar(255)
+  phone           String?  @db.VarChar(50)
+  mobile          String?  @db.VarChar(50)
+  website         String?  @db.VarChar(255)
+  taxId           String?  @db.VarChar(100)
+  address         String?  @db.VarChar(500)
+  city            String?  @db.VarChar(100)
+  state           String?  @db.VarChar(100)
+  postalCode      String?  @db.VarChar(20)
+  country         String   @default("MU") @db.VarChar(2)
+  currency        String   @default("MUR") @db.VarChar(3)
+  paymentTerms    Int      @default(30) // Days
+  creditLimit     Decimal? @db.Decimal(18, 2)
+  notes           String?  @db.VarChar(1000)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@unique([tenantId, companyId, code])
+  @@index([tenantId, companyId, name])
+  @@map("customers")
+}
+
+model Invoice {
+  id             String    @id @default(uuid())
+  tenantId       String
+  companyId      String
+  customerId     String
+  invoiceNumber  String    @db.VarChar(50)
+  invoiceDate    DateTime
+  dueDate        DateTime
+  reference      String?   @db.VarChar(100)
+  description    String?   @db.VarChar(500)
+  subtotal       Decimal   @default(0) @db.Decimal(18, 2)
+  taxAmount      Decimal   @default(0) @db.Decimal(18, 2)
+  totalAmount    Decimal   @default(0) @db.Decimal(18, 2)
+  paidAmount     Decimal   @default(0) @db.Decimal(18, 2)
+  currency       String    @default("MUR") @db.VarChar(3)
+  status         String    @db.VarChar(20) @default("DRAFT") // DRAFT, SENT, PARTIAL, PAID, OVERDUE, CANCELLED
+  notes          String?   @db.VarChar(1000)
+  journalEntryId String?   // Link to GL posting
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  customer     Customer       @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines        InvoiceLine[]
+  payments     Payment[]
+
+  @@unique([tenantId, companyId, invoiceNumber])
+  @@index([tenantId, companyId, customerId])
+  @@index([tenantId, companyId, status])
+  @@index([tenantId, companyId, invoiceDate])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  lineNumber  Int
+  description String  @db.VarChar(500)
+  quantity    Decimal @default(1) @db.Decimal(18, 4)
+  unitPrice   Decimal @default(0) @db.Decimal(18, 2)
+  taxRate     Decimal @default(0) @db.Decimal(5, 2)
+  taxAmount   Decimal @default(0) @db.Decimal(18, 2)
+  lineTotal   Decimal @default(0) @db.Decimal(18, 2)
+  accountId   String? // GL account for revenue
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([invoiceId, lineNumber])
+  @@map("invoice_lines")
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  tenantId        String
+  companyId       String
+  invoiceId       String?  // For AR payments
+  billId          String?  // For AP payments
+  paymentNumber   String   @db.VarChar(50)
+  paymentDate     DateTime
+  paymentMethod   String   @db.VarChar(50) // CASH, CHECK, BANK_TRANSFER, CREDIT_CARD, etc.
+  reference       String?  @db.VarChar(100)
+  amount          Decimal  @db.Decimal(18, 2)
+  currency        String   @default("MUR") @db.VarChar(3)
+  notes           String?  @db.VarChar(1000)
+  journalEntryId  String?  // Link to GL posting
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bill    Bill?    @relation(fields: [billId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([tenantId, companyId, paymentNumber])
+  @@index([tenantId, companyId, invoiceId])
+  @@index([tenantId, companyId, billId])
+  @@index([tenantId, companyId, paymentDate])
+  @@map("payments")
+}
+
+model Supplier {
+  id              String   @id @default(uuid())
+  tenantId        String
+  companyId       String
+  code            String   @db.VarChar(50)
+  name            String   @db.VarChar(255)
+  legalName       String?  @db.VarChar(255)
+  email           String?  @db.VarChar(255)
+  phone           String?  @db.VarChar(50)
+  mobile          String?  @db.VarChar(50)
+  website         String?  @db.VarChar(255)
+  taxId           String?  @db.VarChar(100)
+  address         String?  @db.VarChar(500)
+  city            String?  @db.VarChar(100)
+  state           String?  @db.VarChar(100)
+  postalCode      String?  @db.VarChar(20)
+  country         String   @default("MU") @db.VarChar(2)
+  currency        String   @default("MUR") @db.VarChar(3)
+  paymentTerms    Int      @default(30) // Days
+  notes           String?  @db.VarChar(1000)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  bills   Bill[]
+
+  @@unique([tenantId, companyId, code])
+  @@index([tenantId, companyId, name])
+  @@map("suppliers")
+}
+
+model BankAccount {
+  id                String   @id @default(uuid())
+  tenantId          String
+  companyId         String
+  accountNumber     String   @db.VarChar(50)
+  accountName       String   @db.VarChar(255)
+  bankName          String   @db.VarChar(255)
+  bankBranch        String?  @db.VarChar(255)
+  currency          String   @default("MUR") @db.VarChar(3)
+  accountType       String   @db.VarChar(50) // CHECKING, SAVINGS, CREDIT_CARD
+  glAccountId       String   // Link to GL Cash account
+  openingBalance    Decimal  @default(0) @db.Decimal(18, 2)
+  currentBalance    Decimal  @default(0) @db.Decimal(18, 2)
+  lastReconciledAt  DateTime?
+  lastReconciledBalance Decimal? @db.Decimal(18, 2)
+  isActive          Boolean  @default(true)
+  notes             String?  @db.VarChar(1000)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  glAccount      Account            @relation(fields: [glAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  transactions   BankTransaction[]
+  reconciliations BankReconciliation[]
+
+  @@unique([tenantId, companyId, accountNumber])
+  @@index([tenantId, companyId])
+  @@map("bank_accounts")
+}
+
+model BankTransaction {
+  id                String    @id @default(uuid())
+  tenantId          String
+  companyId         String
+  bankAccountId     String
+  transactionDate   DateTime
+  valueDate         DateTime?
+  description       String    @db.VarChar(500)
+  reference         String?   @db.VarChar(100)
+  debit             Decimal   @default(0) @db.Decimal(18, 2)
+  credit            Decimal   @default(0) @db.Decimal(18, 2)
+  balance           Decimal?  @db.Decimal(18, 2)
+  isReconciled      Boolean   @default(false)
+  reconciledAt      DateTime?
+  reconciliationId  String?
+  journalEntryId    String?   // Link to matched GL entry
+  notes             String?   @db.VarChar(1000)
+  importBatch       String?   @db.VarChar(100)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  bankAccount     BankAccount         @relation(fields: [bankAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reconciliation  BankReconciliation? @relation(fields: [reconciliationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenantId, companyId, bankAccountId])
+  @@index([tenantId, companyId, transactionDate])
+  @@index([tenantId, companyId, isReconciled])
+  @@map("bank_transactions")
+}
+
+model BankReconciliation {
+  id                    String    @id @default(uuid())
+  tenantId              String
+  companyId             String
+  bankAccountId         String
+  reconciliationDate    DateTime
+  statementDate         DateTime
+  statementBalance      Decimal   @db.Decimal(18, 2)
+  glBalance             Decimal   @db.Decimal(18, 2)
+  adjustedGLBalance     Decimal   @db.Decimal(18, 2)
+  difference            Decimal   @db.Decimal(18, 2)
+  status                String    @db.VarChar(20) @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+  notes                 String?   @db.VarChar(1000)
+  reconciledBy          String
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  bankAccount   BankAccount       @relation(fields: [bankAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transactions  BankTransaction[]
+
+  @@index([tenantId, companyId, bankAccountId])
+  @@index([tenantId, companyId, reconciliationDate])
+  @@map("bank_reconciliations")
+}
+
+model TaxRate {
+  id              String   @id @default(uuid())
+  tenantId        String
+  companyId       String
+  code            String   @db.VarChar(50)
+  name            String   @db.VarChar(255)
+  rate            Decimal  @db.Decimal(5, 2) // e.g., 15.00 for 15%
+  taxType         String   @db.VarChar(50) // VAT, SALES_TAX, WITHHOLDING, etc.
+  isDefault       Boolean  @default(false)
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  description     String?  @db.VarChar(500)
+  taxAccountId    String?  // GL account for tax payable/receivable
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  taxAccount       Account?         @relation(fields: [taxAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  taxTransactions  TaxTransaction[]
+
+  @@unique([tenantId, companyId, code])
+  @@index([tenantId, companyId, taxType])
+  @@index([tenantId, companyId, effectiveFrom])
+  @@map("tax_rates")
+}
+
+model TaxTransaction {
+  id                String   @id @default(uuid())
+  tenantId          String
+  companyId         String
+  taxRateId         String
+  transactionDate   DateTime
+  transactionType   String   @db.VarChar(50) // INVOICE, BILL, PAYMENT, ADJUSTMENT
+  referenceType     String?  @db.VarChar(50) // Invoice, Bill, etc.
+  referenceId       String?
+  referenceNumber   String?  @db.VarChar(100)
+  baseAmount        Decimal  @db.Decimal(18, 2)
+  taxAmount         Decimal  @db.Decimal(18, 2)
+  totalAmount       Decimal  @db.Decimal(18, 2)
+  taxRate           Decimal  @db.Decimal(5, 2)
+  isReversed        Boolean  @default(false)
+  reversedAt        DateTime?
+  journalEntryId    String?
+  notes             String?  @db.VarChar(500)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  taxRateConfig TaxRate @relation(fields: [taxRateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenantId, companyId, taxRateId])
+  @@index([tenantId, companyId, transactionDate])
+  @@index([tenantId, companyId, transactionType])
+  @@map("tax_transactions")
+}
+
+model Bill {
+  id             String    @id @default(uuid())
+  tenantId       String
+  companyId      String
+  supplierId     String
+  billNumber     String    @db.VarChar(50)
+  billDate       DateTime
+  dueDate        DateTime
+  reference      String?   @db.VarChar(100)
+  description    String?   @db.VarChar(500)
+  subtotal       Decimal   @default(0) @db.Decimal(18, 2)
+  taxAmount      Decimal   @default(0) @db.Decimal(18, 2)
+  totalAmount    Decimal   @default(0) @db.Decimal(18, 2)
+  paidAmount     Decimal   @default(0) @db.Decimal(18, 2)
+  currency       String    @default("MUR") @db.VarChar(3)
+  status         String    @db.VarChar(20) @default("DRAFT") // DRAFT, APPROVED, PARTIAL, PAID, OVERDUE, CANCELLED
+  notes          String?   @db.VarChar(1000)
+  journalEntryId String?   // Link to GL posting
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  supplier     Supplier       @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines        BillLine[]
+  payments     Payment[]
+
+  @@unique([tenantId, companyId, billNumber])
+  @@index([tenantId, companyId, supplierId])
+  @@index([tenantId, companyId, status])
+  @@index([tenantId, companyId, billDate])
+  @@map("bills")
+}
+
+model BillLine {
+  id          String  @id @default(uuid())
+  billId      String
+  lineNumber  Int
+  description String  @db.VarChar(500)
+  quantity    Decimal @default(1) @db.Decimal(18, 4)
+  unitPrice   Decimal @default(0) @db.Decimal(18, 2)
+  taxRate     Decimal @default(0) @db.Decimal(5, 2)
+  taxAmount   Decimal @default(0) @db.Decimal(18, 2)
+  lineTotal   Decimal @default(0) @db.Decimal(18, 2)
+  accountId   String? // GL account for expense
+
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([billId, lineNumber])
+  @@map("bill_lines")
+}

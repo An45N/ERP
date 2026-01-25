@@ -1,0 +1,52 @@
+### Variables
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMGMyNzg4Yi04YzJkLTQ3ZTctYjE1OC01YjVlOWNlMzZiMDUiLCJ0ZW5hbnRJZCI6ImU2NjI3ZWEzLTM3ODktNDc1Yy1hMTk4LTE2YjQ4ODU3ZmM1ZiIsImVtYWlsIjoiYWRtaW5AZXJwLmxvY2FsIiwiaWF0IjoxNzY4OTgwMjc5LCJleHAiOjE3Njk1ODUwNzl9.inWEDEXNPzhFvuyWH_j21qbe-CUNpaTJH_DMtB3JrGg
+@companyId = c5f61904-b52b-4e97-a1a7-1164cd5556d2
+@accountId = 18ba37dc-bea2-4684-aea8-dc09b20e65b4
+
+GET {{baseUrl}}/accounts?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### Get General Ledger
+GET {{baseUrl}}/reports/general-ledger?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### Get General Ledger for Specific Account
+GET {{baseUrl}}/reports/general-ledger?companyId={{companyId}}&accountId={{accountId}}
+Authorization: Bearer {{token}}
+
+### Get General Ledger with Date Range
+GET {{baseUrl}}/reports/general-ledger?companyId={{companyId}}&startDate=2024-01-01&endDate=2024-12-31
+Authorization: Bearer {{token}}
+
+### Get Trial Balance
+GET {{baseUrl}}/reports/trial-balance?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### Get Trial Balance as of Date
+GET {{baseUrl}}/reports/trial-balance?companyId={{companyId}}&asOfDate=2024-12-31
+Authorization: Bearer {{token}}
+
+### Get Balance Sheet
+GET {{baseUrl}}/reports/balance-sheet?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### Get Balance Sheet as of Date
+GET {{baseUrl}}/reports/balance-sheet?companyId={{companyId}}&asOfDate=2024-12-31
+Authorization: Bearer {{token}}
+
+### Get Income Statement
+GET {{baseUrl}}/reports/income-statement?companyId={{companyId}}
+Authorization: Bearer {{token}}
+
+### Get Income Statement with Date Range
+GET {{baseUrl}}/reports/income-statement?companyId={{companyId}}&startDate=2024-01-01&endDate=2024-12-31
+Authorization: Bearer {{token}}
+
+### Get Account Activity
+GET {{baseUrl}}/reports/account-activity?companyId={{companyId}}&accountId={{accountId}}
+Authorization: Bearer {{token}}
+
+### Get Account Activity with Date Range
+GET {{baseUrl}}/reports/account-activity?companyId={{companyId}}&accountId={{accountId}}&startDate=2024-01-01&endDate=2024-12-31
+Authorization: Bearer {{token}}
