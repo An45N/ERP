@@ -6,11 +6,11 @@ Enterprise Resource Planning system for small Mauritian company, built with mode
 
 | Layer | Stack | Notes |
 | --- | --- | --- |
-| Frontend | React 19 + Vite + TypeScript | Responsive UI, API integration via fetch |
+| Frontend | React 19 + Vite + TypeScript + Tailwind CSS | Responsive UI, React Router, Zustand state management |
 | Backend | Node.js + Express + TypeScript | REST APIs, modular architecture |
 | Data Access | Prisma ORM | SQL Server provider, type-safe queries |
 | Database | SQL Server 2019+ | Cloud VPS hosted |
-| AuthN/AuthZ | JWT + RBAC (planned) | SoD-ready, SSO integration later |
+| AuthN/AuthZ | JWT + bcrypt | Multi-tenant authentication, protected routes |
 | Logging | Pino | Structured logs, pretty-print in dev |
 
 ## Repository Structure
@@ -29,11 +29,19 @@ Enterprise Resource Planning system for small Mauritian company, built with mode
 │  └─ tsconfig.json
 ├─ frontend/
 │  ├─ src/
-│  │  ├─ App.tsx         # Main component
-│  │  ├─ main.tsx        # React entry
-│  │  └─ index.css       # Global styles
+│  │  ├─ components/     # Reusable UI components
+│  │  │  ├─ ui/         # Base components (Button, Input, Card)
+│  │  │  └─ layout/     # Layout components (DashboardLayout)
+│  │  ├─ pages/         # Page components (Login, Dashboard, Accounts)
+│  │  ├─ store/         # Zustand state management (authStore)
+│  │  ├─ lib/           # Utilities (api, utils)
+│  │  ├─ types/         # TypeScript type definitions
+│  │  ├─ App.tsx        # Main app with routing
+│  │  ├─ main.tsx       # React entry
+│  │  └─ index.css      # Global styles with Tailwind
 │  ├─ index.html
 │  ├─ vite.config.ts
+│  ├─ tailwind.config.js
 │  ├─ package.json
 │  └─ tsconfig.json
 ├─ cahier_des_charges_erp_type_sap.md  # Full requirements spec
@@ -52,25 +60,33 @@ Enterprise Resource Planning system for small Mauritian company, built with mode
 ```bash
 cd backend
 
-# Install dependencies (already done)
+# Install dependencies
 npm install
 
 # Configure environment
 cp .env.example .env
 # Edit .env and set your DATABASE_URL:
-# DATABASE_URL="sqlserver://username:password@host:port?database=ERP"
+# DATABASE_URL="sqlserver://username:password@host:port?database=ERP&encrypt=true&trustServerCertificate=true"
 
 # Generate Prisma client
 npm run prisma:generate
 
-# Create database migration (when DB is ready)
-npx prisma migrate dev --name init
+# Run database migrations
+npx prisma migrate deploy
+
+# Seed the database with initial data (tenant, company, admin user, chart of accounts)
+npm run seed
 
 # Run development server
 npm run dev
 ```
 
 Backend will start on **http://localhost:4000**
+
+**Default Admin Credentials:**
+- Tenant Code: `DEFAULT`
+- Email: `admin@erp.local`
+- Password: `Admin123!`
 
 ### 2. Frontend Setup
 
@@ -84,22 +100,35 @@ npm install
 npm run dev
 ```
 
-Frontend will start on **http://localhost:3000** with API proxy to backend.
+Frontend will start on **http://localhost:3000** (or 3001 if 3000 is in use) with API proxy to backend.
 
-### 3. Database Setup
+### 3. Database Schema
 
-The Prisma schema includes:
+The Prisma schema includes comprehensive ERP modules:
+
+**Core Entities:**
 - **Tenant**: Multi-tenancy support
 - **Company**: Legal entities per tenant
 - **User**: Authentication and user management
-- **Role**: RBAC roles
-- **UserRole**: User-role assignments
+- **FiscalPeriod**: Accounting periods (monthly, quarterly, yearly)
 
-To create the database:
-```bash
-cd backend
-npx prisma migrate dev --name init
-```
+**Accounting:**
+- **Account**: Chart of accounts (GL accounts)
+- **JournalEntry** & **JournalLine**: Double-entry bookkeeping
+- **Customer** & **Supplier**: AR/AP master data
+- **Invoice** & **InvoiceLine**: Sales invoicing
+- **InvoicePayment**: Payment tracking
+- **Bill** & **BillLine**: Purchase bills
+- **BillPayment**: Bill payment tracking
+
+**Banking:**
+- **BankAccount**: Bank account master data
+- **BankTransaction**: Bank transactions
+- **BankReconciliation** & **ReconciliationItem**: Bank reconciliation
+
+**Tax Management:**
+- **TaxRate**: VAT and other tax rates
+- **TaxTransaction**: Tax transaction tracking
 
 ## Available Scripts
 
@@ -107,8 +136,10 @@ npx prisma migrate dev --name init
 - `npm run dev` - Start dev server with hot reload (tsx)
 - `npm run build` - Compile TypeScript to dist/
 - `npm start` - Run production build
+- `npm run seed` - Seed database with initial data
 - `npm run prisma:generate` - Generate Prisma client
 - `npm run prisma:migrate` - Deploy migrations
+- `npm run prisma:studio` - Open Prisma Studio (database GUI)
 
 ### Frontend
 - `npm run dev` - Start Vite dev server
@@ -118,22 +149,88 @@ npx prisma migrate dev --name init
 ## Current Status
 
 ✅ **Completed:**
-- Project scaffolding (backend + frontend)
-- TypeScript configuration
-- Express server with health check endpoint
-- Prisma schema with core entities (Tenant, Company, User, Role)
-- React frontend with backend health check
-- Environment configuration with validation
-- Structured logging (Pino)
+
+**Backend:**
+- Multi-tenant architecture with Prisma ORM
+- Complete database schema (Accounting, AR, AP, Banking, Tax)
+- JWT authentication with bcrypt password hashing
+- RESTful APIs for all modules:
+  - Authentication (login, register, token management)
+  - Chart of Accounts (CRUD, search, filtering)
+  - Journal Entries (double-entry bookkeeping, posting, reversing)
+  - Fiscal Periods (initialization, management)
+  - Accounts Receivable (invoices, payments, aging reports)
+  - Accounts Payable (bills, payments, supplier management)
+  - Bank Reconciliation (accounts, transactions, matching)
+  - Tax Management (VAT rates, tax reporting)
+  - Financial Reports (General Ledger, Trial Balance, P&L, Balance Sheet)
+- Database seeding script with default data
+- Comprehensive test suite (`.http` files for all endpoints)
+- Structured logging with Pino
+- CORS and security middleware
+
+**Frontend:**
+- React 19 + TypeScript + Vite
+- Modern UI with Tailwind CSS v4
+- Authentication flow (login, protected routes, logout)
+- Responsive dashboard layout with sidebar navigation
+- Dashboard with financial stats and quick actions
+- Chart of Accounts page with search and filtering
+- Zustand state management
+- Axios API client with JWT interceptors
+- Reusable UI components (Button, Input, Card, etc.)
 
 🚧 **Next Steps:**
-1. Set up SQL Server connection and run migrations
-2. Implement authentication (JWT, bcrypt)
-3. Build user management APIs (CRUD)
-4. Add company/tenant management
-5. Implement role-based access control
-6. Build frontend authentication flow
-7. Add first business module (Finance or Master Data)
+1. Complete remaining frontend pages:
+   - Journal Entries management
+   - Customer/Supplier CRUD
+   - Invoice creation and management
+   - Bill creation and management
+   - Financial reports visualization
+   - Bank reconciliation interface
+   - Tax management interface
+2. Add form validation and error handling
+3. Implement data tables with pagination and sorting
+4. Add export functionality (PDF, Excel)
+5. Implement role-based access control (RBAC)
+6. Add audit logging
+7. Performance optimization and caching
+8. Production deployment setup
+
+## Testing
+
+### Backend API Testing
+
+The backend includes comprehensive HTTP test files for all endpoints. Use the REST Client extension in VS Code to run these tests.
+
+**Test Files:**
+- `test-auth.http` - Authentication endpoints
+- `test-accounts.http` - Chart of accounts
+- `test-journal-entries.http` - Journal entries and fiscal periods
+- `test-ar.http` - Accounts receivable (invoices, customers)
+- `test-ap.http` - Accounts payable (bills, suppliers)
+- `test-bank.http` - Bank accounts and reconciliation
+- `test-tax.http` - Tax rates and VAT reports
+- `test-reports.http` - Financial reports
+
+**Testing Guide:**
+
+See `backend/TESTING_GUIDE.md` for step-by-step instructions on testing all API endpoints.
+
+**Quick Start:**
+1. Ensure backend is running (`npm run dev`)
+2. Run the seed script (`npm run seed`)
+3. Open any `.http` file in VS Code
+4. Click "Send Request" above each HTTP request
+5. Variables are already populated with correct IDs
+
+### Frontend Testing
+
+1. Start the backend server: `cd backend && npm run dev`
+2. Start the frontend server: `cd frontend && npm run dev`
+3. Open http://localhost:3000 (or 3001) in your browser
+4. Login with default credentials (see above)
+5. Navigate through Dashboard and Chart of Accounts
 
 ## Development Guidelines
 
@@ -143,6 +240,7 @@ npx prisma migrate dev --name init
 - Log important operations with Pino
 - Keep frontend/backend separation clean
 - Test locally before committing
+- All API endpoints must be tested with `.http` files
 
 ## Cost Estimate
 

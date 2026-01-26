@@ -2,7 +2,7 @@
 @baseUrl = http://localhost:4000/api
 @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMGMyNzg4Yi04YzJkLTQ3ZTctYjE1OC01YjVlOWNlMzZiMDUiLCJ0ZW5hbnRJZCI6ImU2NjI3ZWEzLTM3ODktNDc1Yy1hMTk4LTE2YjQ4ODU3ZmM1ZiIsImVtYWlsIjoiYWRtaW5AZXJwLmxvY2FsIiwiaWF0IjoxNzY4OTgwMjc5LCJleHAiOjE3Njk1ODUwNzl9.inWEDEXNPzhFvuyWH_j21qbe-CUNpaTJH_DMtB3JrGg
 @companyId = c5f61904-b52b-4e97-a1a7-1164cd5556d2
-@customerId = YOUR_CUSTOMER_ID_HERE
+@customerId = 62764cb1-0aca-49eb-9ee3-b207a1cc5732
 @invoiceId = YOUR_INVOICE_ID_HERE
 
 ### ============================================
