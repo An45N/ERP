@@ -10,8 +10,8 @@ interface CompanyState {
 export const useCompanyStore = create<CompanyState>()(
   persist(
     (set) => ({
-      companyId: 'c5f61904-b52b-4e97-a1a7-1164cd5556d2',
-      companyName: 'Default Company',
+      companyId: '',
+      companyName: '',
       setCompany: (id: string, name: string) => set({ companyId: id, companyName: name }),
     }),
     {

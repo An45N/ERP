@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { Login } from "./pages/Login";
+import { SelectCompany } from "./pages/SelectCompany";
 import { Dashboard } from "./pages/Dashboard";
 import { Accounts } from "./pages/Accounts";
 import { JournalEntries } from "./pages/JournalEntries";
@@ -29,6 +30,14 @@ function App() {
         <Toaster />
         <Routes>
         <Route path="/login" element={<Login />} />
+        <Route 
+          path="/select-company" 
+          element={
+            <ProtectedRoute requireCompany={false}>
+              <SelectCompany />
+            </ProtectedRoute>
+          } 
+        />
         <Route
           path="/"
           element={

@@ -1,5 +1,6 @@
 import { prisma } from "../prisma";
 import { logger } from "../logger";
+import { CodeGenerator } from "../code-generator";
 
 export interface CreateCustomerInput {
   tenantId: string;
@@ -45,37 +46,17 @@ export interface UpdateCustomerInput {
 }
 
 export class CustomerService {
-  static async generateCustomerCode(tenantId: string, companyId: string): Promise<string> {
-    const lastCustomer = await prisma.customer.findFirst({
-      where: {
-        tenantId,
-        companyId,
-        code: {
-          startsWith: "CUST-",
-        },
-      },
-      orderBy: {
-        code: "desc",
-      },
-    });
-
-    let nextNumber = 1;
-    if (lastCustomer && lastCustomer.code) {
-      const lastNumber = parseInt(lastCustomer.code.split("-").pop() || "0");
-      nextNumber = lastNumber + 1;
-    }
-
-    return `CUST-${nextNumber.toString().padStart(5, "0")}`;
-  }
-
   static async createCustomer(input: CreateCustomerInput) {
+    // Auto-generate code if not provided
+    const code = input.code || await CodeGenerator.generateCustomerCode(input.tenantId, input.companyId);
+
     const existingCustomer = await prisma.customer.findFirst({
       where: {
         tenantId: input.tenantId,
         companyId: input.companyId,
         OR: [
           { name: input.name },
-          ...(input.code ? [{ code: input.code }] : []),
+          { code },
           ...(input.email ? [{ email: input.email }] : []),
         ],
       },
@@ -85,15 +66,13 @@ export class CustomerService {
       if (existingCustomer.name === input.name) {
         throw new Error("Customer with this name already exists");
       }
-      if (input.code && existingCustomer.code === input.code) {
+      if (existingCustomer.code === code) {
         throw new Error("Customer with this code already exists");
       }
       if (input.email && existingCustomer.email === input.email) {
         throw new Error("Customer with this email already exists");
       }
     }
-
-    const code = input.code || await this.generateCustomerCode(input.tenantId, input.companyId);
 
     const customer = await prisma.customer.create({
       data: {

@@ -1,9 +1,27 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { CustomerService } from "../lib/ar/customer";
+import { CodeGenerator } from "../lib/code-generator";
 import { logger } from "../lib/logger";
 
 export const customersRouter = Router();
+
+customersRouter.get("/next-code", async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { companyId } = req.query;
+
+    if (!user?.tenantId || !companyId) {
+      return res.status(400).json({ error: "Missing required parameters" });
+    }
+
+    const nextCode = await CodeGenerator.generateCustomerCode(user.tenantId, companyId as string);
+    res.json({ code: nextCode });
+  } catch (error) {
+    logger.error({ error }, "Failed to generate customer code");
+    res.status(500).json({ error: "Failed to generate customer code" });
+  }
+});
 
 const createCustomerSchema = z.object({
   companyId: z.string().uuid(),

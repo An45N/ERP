@@ -18,7 +18,7 @@ export function Login() {
     e.preventDefault();
     try {
       await login(formData);
-      navigate("/");
+      navigate("/select-company");
     } catch (err) {
       console.error("Login failed:", err);
     }
@@ -78,8 +78,12 @@ export function Login() {
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+            <Button
+              type="submit"
+              className="w-full"
+              isLoading={isLoading}
+            >
+              Sign In
             </Button>
           </form>
         </CardContent>

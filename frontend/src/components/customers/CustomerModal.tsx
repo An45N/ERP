@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,7 +19,7 @@ const customerSchema = z.object({
   country: z.string().max(100, 'Country must be 100 characters or less'),
   postalCode: z.string().max(20, 'Postal code must be 20 characters or less'),
   taxId: z.string().max(50, 'Tax ID must be 50 characters or less'),
-  creditLimit: z.coerce.number().min(0, 'Credit limit must be positive').nullable(),
+  creditLimit: z.union([z.number().min(0, 'Credit limit must be positive'), z.null()]).optional(),
   paymentTerms: z.string().max(100, 'Payment terms must be 100 characters or less'),
   currency: z.string().length(3, 'Currency must be 3 characters'),
   isActive: z.boolean(),
@@ -42,6 +43,7 @@ export function CustomerModal({ isOpen, onClose, onSuccess, customer, companyId 
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    setValue,
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: customer ? {
@@ -74,6 +76,21 @@ export function CustomerModal({ isOpen, onClose, onSuccess, customer, companyId 
       isActive: true,
     },
   });
+
+  // Auto-fetch next customer code when creating new customer
+  useEffect(() => {
+    if (!isEditing && isOpen && companyId) {
+      const fetchNextCode = async () => {
+        try {
+          const response = await api.get(`/customers/next-code?companyId=${companyId}`);
+          setValue('code', response.data.code);
+        } catch (error) {
+          console.error('Failed to fetch next customer code:', error);
+        }
+      };
+      fetchNextCode();
+    }
+  }, [isEditing, isOpen, companyId, setValue]);
 
   const onSubmit = async (data: CustomerFormData) => {
     const toastId = showToast.loading(isEditing ? 'Updating customer...' : 'Creating customer...');
@@ -142,10 +159,14 @@ export function CustomerModal({ isOpen, onClose, onSuccess, customer, companyId 
             </label>
             <Input
               {...register('code')}
-              placeholder="CUST001"
-              disabled={isEditing}
-              className={errors.code ? 'border-red-500' : ''}
+              placeholder="Auto-generated"
+              readOnly
+              disabled
+              className={`bg-gray-50 ${errors.code ? 'border-red-500' : ''}`}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              {isEditing ? 'Code cannot be changed' : 'Auto-generated on save'}
+            </p>
             {errors.code && (
               <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>
             )}

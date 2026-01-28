@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card"
 import { Button } from "../components/ui/Button";
 import { DollarSign, TrendingUp, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, Calendar, FileText } from "lucide-react";
 import { useCompanyStore } from "../store/companyStore";
+import { CompanySelector } from "../components/CompanySelector";
 import { api } from "../lib/api";
 import { formatCurrency, formatDate } from "../lib/utils";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -75,6 +76,11 @@ export function Dashboard() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!companyId) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
         const dateParams = getDateRangeParams(dateFilter);
@@ -172,9 +178,14 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome to your ERP system overview</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-2">Welcome to your ERP system overview</p>
+        </div>
+        <div className="flex-shrink-0">
+          <CompanySelector />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

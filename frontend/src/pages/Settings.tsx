@@ -6,6 +6,7 @@ import { Building2, Save, User } from "lucide-react";
 import { api } from "../lib/api";
 import toast from "react-hot-toast";
 import { useCompanyStore } from "../store/companyStore";
+import { CompanySelector } from "../components/CompanySelector";
 
 interface CompanySettings {
   name: string;
@@ -21,6 +22,7 @@ export function Settings() {
   const companyId = useCompanyStore((state) => state.companyId);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<CompanySettings>({
     name: "",
     address: "",
@@ -32,10 +34,17 @@ export function Settings() {
   });
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (companyId) {
+      fetchSettings();
+    } else {
+      setLoading(false);
+      setError("No company selected");
+    }
+  }, [companyId]);
 
   const fetchSettings = async () => {
+    setError(null);
+    setLoading(true);
     try {
       const response = await api.get(`/companies/${companyId}`);
       if (response.data) {
@@ -51,7 +60,9 @@ export function Settings() {
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error);
-      toast.error("Failed to load settings");
+      const message = error instanceof Error ? error.message : "Failed to load settings";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -77,16 +88,57 @@ export function Settings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading settings...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="text-lg text-gray-600">Loading settings...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600 mt-2">Manage your company settings and preferences</p>
+          </div>
+          <div className="flex-shrink-0">
+            <CompanySelector />
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="text-lg text-red-600">{error}</div>
+          {companyId ? (
+            <Button onClick={fetchSettings} variant="outline">
+              Try Again
+            </Button>
+          ) : (
+            <p className="text-gray-500">Please select a company from the dropdown above</p>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your company settings and preferences</p>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600 mt-2">Manage your company settings and preferences</p>
+          </div>
+          <div className="flex-shrink-0">
+            <CompanySelector />
+          </div>
+        </div>
+        {companyId && (
+          <p className="text-sm text-gray-500">
+            Company ID: {companyId}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

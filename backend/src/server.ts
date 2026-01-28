@@ -16,6 +16,8 @@ import { suppliersRouter } from "./routes/suppliers";
 import { billsRouter } from "./routes/bills";
 import { bankRouter } from "./routes/bank";
 import { taxRouter } from "./routes/tax";
+import { companiesRouter } from "./routes/companies";
+import { dashboardRouter } from "./routes/dashboard";
 import { authenticate } from "./middleware/auth";
 
 const app = express();
@@ -35,6 +37,12 @@ app.get("/", (req, res) => {
         register: "POST /api/auth/register",
         login: "POST /api/auth/login",
         me: "GET /api/auth/me"
+      },
+      companies: {
+        list: "GET /api/companies",
+        get: "GET /api/companies/:id",
+        create: "POST /api/companies",
+        update: "PATCH /api/companies/:id"
       },
       accounting: {
         accounts: {
@@ -164,6 +172,8 @@ app.get("/", (req, res) => {
 
 app.use("/api", healthRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/companies", authenticate, companiesRouter);
+app.use("/api/dashboard", authenticate, dashboardRouter);
 app.use("/api/accounts", authenticate, accountsRouter);
 app.use("/api/journal-entries", authenticate, journalEntriesRouter);
 app.use("/api/fiscal-periods", authenticate, fiscalPeriodsRouter);
